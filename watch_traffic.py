@@ -176,9 +176,16 @@ def render_screen(hub: TrafficHub):
     lines.append(f"{CYAN}----------------------------------------------------------------------------------------------------{RESET}")
 
     # Render Live Stream Hits
+    try:
+        term_height = os.get_terminal_size().lines
+        # Header + top stats take ~16 lines, reserve 2 lines at bottom
+        max_feed_lines = max(24, term_height - 18)
+    except Exception:
+        max_feed_lines = 32
+
     rendered = 0
     for hit in hub.recent_hits:
-        if rendered >= 18:
+        if rendered >= max_feed_lines:
             break
 
         # Filter check
