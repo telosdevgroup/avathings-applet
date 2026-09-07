@@ -1,0 +1,8 @@
+[
+  {
+    "name": "VetGems",
+    "folder": "C:\\Users\\dev\\Code\\tdg\\vetgems-lake",
+    "start_command": "python web_public.py",
+    "about": "Public veterinary-practice search site and data lake."
+  }
+]

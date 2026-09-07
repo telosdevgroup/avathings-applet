@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ava Log Stream Watcher</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #0d1117;
+      color: #c9d1d9;
+      font-family: Consolas, "Courier New", Courier, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+    header {
+      background-color: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .title {
+      font-weight: bold;
+      color: #58a6ff;
+      letter-spacing: 0.5px;
+      margin-right: 4px;
+    }
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background-color: #0d1117;
+      padding: 2px 4px;
+      border-radius: 6px;
+      border: 1px solid #30363d;
+    }
+    .filter-btn {
+      background: none;
+      border: 1px solid transparent;
+      color: #8b949e;
+      padding: 2px 8px;
+      font-size: 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+    .filter-btn:hover {
+      color: #c9d1d9;
+      background-color: #21262d;
+    }
+    .filter-btn.active {
+      color: #fff;
+      font-weight: bold;
+    }
+    .filter-btn.all.active {
+      background-color: #1f6feb;
+      border-color: #388bfd;
+    }
+    .filter-btn.site-scry.active {
+      background-color: rgba(88, 166, 255, 0.2);
+      border-color: #58a6ff;
+      color: #58a6ff;
+    }
+    .filter-btn.site-vet.active {
+      background-color: rgba(63, 185, 80, 0.2);
+      border-color: #3fb950;
+      color: #3fb950;
+    }
+    .filter-btn.site-minder.active {
+      background-color: rgba(210, 168, 255, 0.2);
+      border-color: #d2a8ff;
+      color: #d2a8ff;
+    }
+    .filter-btn.site-specs.active {
+      background-color: rgba(240, 136, 62, 0.2);
+      border-color: #f0883e;
+      color: #f0883e;
+    }
+    .filter-btn.site-vetha.active {
+      background-color: rgba(46, 160, 67, 0.2);
+      border-color: #2ea043;
+      color: #2ea043;
+    }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+    .status-connected {
+      background-color: #238636;
+      color: #fff;
+    }
+    .status-disconnected {
+      background-color: #da3633;
+      color: #fff;
+    }
+    .scroll-indicator {
+      font-size: 11px;
+      color: #d29922;
+      cursor: pointer;
+      display: none;
+    }
+    button.action-btn, a.action-link {
+      background-color: #21262d;
+      color: #c9d1d9;
+      border: 1px solid #30363d;
+      padding: 3px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+    }
+    button.action-btn:hover, a.action-link:hover {
+      background-color: #30363d;
+      color: #fff;
+    }
+    button.action-btn.active {
+      background-color: #1f6feb;
+      border-color: #388bfd;
+      color: #fff;
+    }
+
+    #stream-container {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: auto;
+      padding: 8px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      contain: content;
+      user-select: text;
+    }
+    .log-row {
+      white-space: nowrap;
+      font-size: 13px;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      padding: 1px 0;
+      contain: layout style;
+    }
+    .log-row:hover {
+      background-color: #161b22;
+    }
+    .log-row.hidden {
+      display: none !important;
+    }
+    .col-site {
+      font-weight: bold;
+      width: 105px;
+      flex-shrink: 0;
+    }
+    .site-avascry { color: #58a6ff; }
+    .site-vetgems { color: #3fb950; }
+    .site-avaminder { color: #d2a8ff; }
+    .site-avaspecs { color: #f0883e; }
+    .site-vethagolf { color: #2ea043; }
+    .col-bot {
+      color: #d29922;
+      width: 145px;
+      flex-shrink: 0;
+    }
+    .col-bot.meta { color: #db61a2; }
+    .col-bot.browser { color: #79c0ff; }
+    .col-bot.claude { color: #d97706; }
+    .col-bot.google { color: #34d399; }
+    .col-bot.apple { color: #f778ba; }
+    .col-bot.amazon { color: #e3b341; }
+    .col-bot.shapbot { color: #388bfd; }
+    .col-time {
+      color: #8b949e;
+      width: 65px;
+      flex-shrink: 0;
+      text-align: right;
+    }
+    .col-tags {
+      display: inline-flex;
+      gap: 5px;
+      width: 125px;
+      flex-shrink: 0;
+      font-family: inherit;
+      letter-spacing: 0.2px;
+    }
+    .col-tags .tag-surf, .col-tags .tag-fmt {
+      display: inline-block;
+      width: 58px;
+      text-align: center;
+      border-radius: 3px;
+      padding: 0 2px;
+      font-weight: 600;
+    }
+    /* Surface Colors */
+    .surf-prin { color: #79c0ff; background: rgba(121, 192, 255, 0.12); }
+    .surf-sim  { color: #f778ba; background: rgba(247, 120, 186, 0.12); }
+    .surf-vect { color: #56d364; background: rgba(86, 211, 100, 0.12); }
+    .surf-arts { color: #e3b341; background: rgba(227, 179, 65, 0.12); }
+    .surf-sets { color: #d2a8ff; background: rgba(210, 168, 255, 0.12); }
+    .surf-img  { color: #388bfd; background: rgba(56, 139, 253, 0.12); }
+    .surf-comp { color: #f0883e; background: rgba(240, 136, 62, 0.14); }
+    .surf-reg  { color: #58a6ff; background: rgba(88, 166, 255, 0.14); }
+    .surf-prod { color: #7ee787; background: rgba(126, 231, 135, 0.14); }
+    .surf-enty { color: #d2a8ff; background: rgba(210, 168, 255, 0.14); }
+    .surf-rcll { color: #f85149; background: rgba(248, 81, 73, 0.14); }
+    .surf-510k { color: #e3b341; background: rgba(227, 179, 65, 0.14); }
+    .surf-vet  { color: #3fb950; background: rgba(63, 185, 80, 0.12); }
+    .surf-home { color: #8b949e; background: rgba(139, 148, 158, 0.12); }
+    .surf-venu { color: #2ea043; background: rgba(46, 160, 67, 0.12); }
+    .surf-srch { color: #e3b341; background: rgba(227, 179, 65, 0.12); }
+    .surf-llms { color: #d2a8ff; background: rgba(210, 168, 255, 0.12); }
+    .surf-othr { color: #bc8cff; background: rgba(188, 140, 255, 0.12); }
+
+    /* Format Colors */
+    .fmt-html  { color: #c9d1d9; background: rgba(201, 209, 217, 0.08); }
+    .fmt-json  { color: #e3b341; background: rgba(227, 179, 65, 0.14); }
+    .fmt-csv   { color: #3fb950; background: rgba(63, 185, 80, 0.14); }
+    .fmt-md    { color: #d2a8ff; background: rgba(210, 168, 255, 0.14); }
+    .fmt-xml   { color: #f85149; background: rgba(248, 81, 73, 0.14); }
+    .fmt-img   { color: #58a6ff; background: rgba(88, 166, 255, 0.14); }
+    .fmt-othr  { color: #8b949e; background: rgba(139, 148, 158, 0.08); }
+    .col-action {
+      color: #7ee787;
+    }
+    .col-method {
+      color: #388bfd;
+      font-weight: bold;
+    }
+    .col-path {
+      color: #e6edf3;
+    }
+    .raw-fallback {
+      color: #8b949e;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <span class="title">⚡ AVA TRAFFIC</span>
+      <span class="badge" style="background-color: #1f6feb; color: #fff; margin-right: 6px;">LIVE STREAM</span>
+      <div class="filter-group">
+        <button class="filter-btn all active" onclick="setSiteFilter('ALL', this)">ALL SITES</button>
+        <button class="filter-btn site-scry" onclick="setSiteFilter('AvaScry', this)">AvaScry</button>
+        <button class="filter-btn site-specs" onclick="setSiteFilter('AvaSpecs', this)">AvaSpecs</button>
+        <button class="filter-btn site-vet" onclick="setSiteFilter('VetGems', this)">VetGems</button>
+        <button class="filter-btn site-minder" onclick="setSiteFilter('AvaMinder', this)">AvaMinder</button>
+        <button class="filter-btn site-vetha" onclick="setSiteFilter('VethaGolf', this)">VethaGolf</button>
+      </div>
+    </div>
+    <div class="controls">
+      <a href="/" target="_self" class="action-link" style="background-color: #1f6feb; border-color: #388bfd; color: #fff; font-weight: bold;">⚡ Stream</a>
+      <a href="/stats" target="_self" class="action-link">📊 Stats</a>
+      <a href="/citations" target="_self" class="action-link">🎯 Citations</a>
+      <span style="color: #30363d; margin: 0 4px;">|</span>
+      <span id="scroll-hint" class="scroll-indicator" onclick="resetScrollPosition()">▼ Scrolled down</span>
+      <button id="order-btn" class="action-btn" onclick="toggleSortOrder()">Order: Newest Top ▲</button>
+      <span id="line-count" style="color: #8b949e; font-size: 11px;">0 lines</span>
+      <button id="pause-btn" class="action-btn" onclick="togglePause()">Pause</button>
+      <button class="action-btn" onclick="clearLogs()">Clear</button>
+      <span id="status-badge" class="badge status-disconnected">Connecting...</span>
+    </div>
+  </header>
+
+  <div id="stream-container"></div>
+
+  <script>
+    const container = document.getElementById("stream-container");
+    const statusBadge = document.getElementById("status-badge");
+    const pauseBtn = document.getElementById("pause-btn");
+    const orderBtn = document.getElementById("order-btn");
+    const countLabel = document.getElementById("line-count");
+    const scrollHint = document.getElementById("scroll-hint");
+
+    let isPaused = false;
+    let autoScroll = true;
+    let newestOnTop = true;
+    let totalLines = 0;
+    const urlParams = new URLSearchParams(window.location.search);
+    let currentFilter = urlParams.get("site") || "ALL";
+    const MAX_LINES = 1500;
+
+    let pendingLogs = [];
+    let renderScheduled = false;
+
+    function applySiteFilterUI(site) {
+      document.querySelectorAll(".filter-btn").forEach(btn => {
+        const onclickAttr = btn.getAttribute("onclick") || "";
+        if (onclickAttr.includes(`'${site}'`)) {
+          btn.classList.add("active");
+        } else {
+          btn.classList.remove("active");
+        }
+      });
+    }
+
+    applySiteFilterUI(currentFilter);
+
+    function toggleSortOrder() {
+      newestOnTop = !newestOnTop;
+      orderBtn.textContent = newestOnTop ? "Order: Newest Top ▲" : "Order: Newest Bottom ▼";
+      const rows = Array.from(container.children);
+      container.innerHTML = "";
+      rows.reverse().forEach(r => container.appendChild(r));
+      resetScrollPosition();
+    }
+
+    function resetScrollPosition() {
+      if (newestOnTop) {
+        container.scrollTop = 0;
+      } else {
+        container.scrollTop = container.scrollHeight;
+      }
+      autoScroll = true;
+      scrollHint.style.display = "none";
+    }
+
+    function setSiteFilter(site, btnElement) {
+      currentFilter = site;
+      const url = new URL(window.location);
+      if (site === "ALL") {
+        url.searchParams.delete("site");
+      } else {
+        url.searchParams.set("site", site);
+      }
+      window.history.replaceState({}, "", url);
+
+      document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
+      if (btnElement) btnElement.classList.add("active");
+
+      const rows = container.querySelectorAll(".log-row");
+      rows.forEach(row => {
+        const rowSite = row.getAttribute("data-site");
+        if (currentFilter === "ALL" || rowSite === currentFilter) {
+          row.classList.remove("hidden");
+        } else {
+          row.classList.add("hidden");
+        }
+      });
+
+      resetScrollPosition();
+    }
+
+    container.addEventListener("scroll", () => {
+      if (newestOnTop) {
+        autoScroll = container.scrollTop <= 20;
+        scrollHint.textContent = "▲ Scrolled down (Click to jump to live top)";
+      } else {
+        autoScroll = container.scrollHeight - container.scrollTop - container.clientHeight <= 30;
+        scrollHint.textContent = "▼ Scrolled up (Click to jump to live bottom)";
+      }
+      scrollHint.style.display = autoScroll ? "none" : "inline";
+    });
+
+    function togglePause() {
+      isPaused = !isPaused;
+      pauseBtn.textContent = isPaused ? "Resume" : "Pause";
+      pauseBtn.classList.toggle("active", isPaused);
+    }
+
+    function clearLogs() {
+      container.innerHTML = "";
+      pendingLogs = [];
+      totalLines = 0;
+      countLabel.textContent = "0 stream lines";
+      resetScrollPosition();
+    }
+
+    const LINE_REGEX = /\[(?<bot>[^\]]+)\]\s*(?:\[(?<subsite>[A-Z0-9_\s]{2,5})\])?\s*\d+\s+\(\s*(?<ms>[^)]+)\)\s*(?<tags>(?:\[[^\]]+\]\s*)+)->\s+(?<method>[A-Z]+)\s+(?<path>[^\s"]+)/;
+
+    function getSiteClass(site) {
+      const lower = site.toLowerCase();
+      if (lower.includes("scry")) return "site-avascry";
+      if (lower.includes("vetgems")) return "site-vetgems";
+      if (lower.includes("vetha")) return "site-vethagolf";
+      if (lower.includes("minder")) return "site-avaminder";
+      if (lower.includes("specs")) return "site-avaspecs";
+      return "";
+    }
+
+    function formatTwoPills(tagsStr, path) {
+      // Find all bracketed tokens e.g. [PRIN] [HTML] or just [HTML]
+      const found = (tagsStr.match(/\[[A-Z0-9_\s]{2,5}\]/g) || []).map(t => t.replace(/[\[\]\s]/g, ""));
+      let surf = "";
+      let fmt = "";
+
+      // List of recognized formats
+      const FORMAT_SET = new Set(["HTML", "JSON", "MD", "XML", "IMG", "TXT", "CSS", "JS", "RSS", "ASST", "CSV"]);
+
+      if (found.length >= 2) {
+        surf = found[0];
+        fmt = found[1];
+      } else if (found.length === 1) {
+        if (FORMAT_SET.has(found[0])) {
+          fmt = found[0];
+        } else {
+          surf = found[0];
+        }
+      }
+
+      // Infer missing surface from path
+      const p = (path || "").toLowerCase();
+      if (!surf) {
+        if (p.startsWith("/printing/")) surf = "PRIN";
+        else if (p.startsWith("/similar/")) surf = "SIM";
+        else if (p.startsWith("/vector/")) surf = "VECT";
+        else if (p.startsWith("/artist/")) surf = "ARTS";
+        else if (p.startsWith("/sets/")) surf = "SETS";
+        else if (p.startsWith("/images/")) surf = "IMG";
+        else if (p.startsWith("/company/")) surf = "COMP";
+        else if (p.startsWith("/registration/")) surf = "REG";
+        else if (p.startsWith("/product/")) surf = "PROD";
+        else if (p.startsWith("/entity/")) surf = "ENTY";
+        else if (p.startsWith("/recall/")) surf = "RCLL";
+        else if (p.startsWith("/510k/")) surf = "510K";
+        else if (p.startsWith("/practice/")) surf = "VET";
+        else if (p.startsWith("/venue/")) surf = "VENU";
+        else if (p.startsWith("/search") || p.startsWith("/find")) surf = "SRCH";
+        else if (p.startsWith("/llms")) surf = "LLMS";
+        else if (p === "/" || p === "") surf = "HOME";
+        else surf = "OTHR";
+      }
+
+      // Infer missing format from path
+      if (!fmt) {
+        if (p.endsWith(".json")) fmt = "JSON";
+        else if (p.endsWith(".csv")) fmt = "CSV";
+        else if (p.endsWith(".md")) fmt = "MD";
+        else if (p.endsWith(".xml")) fmt = "XML";
+        else if (p.match(/\.(jpg|png|webp|gif)$/)) fmt = "IMG";
+        else fmt = "HTML";
+      }
+
+      // Surface color class
+      const surfClassMap = {
+        PRIN: "surf-prin", SIM: "surf-sim", VECT: "surf-vect", ARTS: "surf-arts",
+        SETS: "surf-sets", IMG: "surf-img", COMP: "surf-comp", REG: "surf-reg",
+        PROD: "surf-prod", ENTY: "surf-enty", RCLL: "surf-rcll", "510K": "surf-510k",
+        VET: "surf-vet", HOME: "surf-home", CMDR: "surf-sim", MAP: "surf-arts",
+        VENU: "surf-venu", SRCH: "surf-srch", LLMS: "surf-llms"
+      };
+      const surfClass = surfClassMap[surf] || "surf-othr";
+
+      // Format color class
+      const fmtClassMap = {
+        HTML: "fmt-html", JSON: "fmt-json", CSV: "fmt-csv", MD: "fmt-md", XML: "fmt-xml", IMG: "fmt-img"
+      };
+      const fmtClass = fmtClassMap[fmt] || "fmt-othr";
+
+      // Pad to 4 chars for crisp alignment
+      const surfPad = surf.padEnd(4, " ");
+      const fmtPad = fmt.padEnd(4, " ");
+
+      return `<span class="col-tags"><span class="tag-surf ${surfClass}">[${surfPad}]</span><span class="tag-fmt ${fmtClass}">[${fmtPad}]</span></span>`;
+    }
+
+    function createRowElement(site, raw) {
+      const match = raw.match(LINE_REGEX);
+      const row = document.createElement("div");
+      row.className = "log-row";
+      row.setAttribute("data-site", site);
+      row.title = raw;
+
+      if (currentFilter !== "ALL" && currentFilter !== site) {
+        row.classList.add("hidden");
+      }
+
+      const siteClass = getSiteClass(site);
+
+      if (match && match.groups) {
+        const { bot, subsite, ms, tags, method, path } = match.groups;
+        const lowerBot = bot.toLowerCase();
+        let botClass = "";
+        if (lowerBot.includes("meta")) botClass = "meta";
+        else if (lowerBot.includes("browser")) botClass = "browser";
+        else if (lowerBot.includes("claude")) botClass = "claude";
+        else if (lowerBot.includes("google")) botClass = "google";
+        else if (lowerBot.includes("apple")) botClass = "apple";
+        else if (lowerBot.includes("amazon")) botClass = "amazon";
+        else if (lowerBot.includes("shap")) botClass = "shapbot";
+
+        const tagsHtml = formatTwoPills(tags, path);
+        const displaySite = subsite ? subsite.trim() : site;
+
+        row.innerHTML = `
+          <span class="col-site ${siteClass}">[${displaySite}]</span>
+          <span class="col-bot ${botClass}">[${bot}]</span>
+          <span class="col-time">(${ms.trim()})</span>
+          ${tagsHtml}
+          <span class="col-action">
+            <span style="color:#6e7681">-&gt;</span>
+            <span class="col-method">${method}</span>
+            <span class="col-path">${path}</span>
+          </span>
+        `;
+      } else {
+        let clean = raw.replace(/^\d{4}-\d{2}-\d{2}T[^\s]+\s+[^\s]+\s+/, "").replace(/"[^"]*"/g, "").trim();
+        row.innerHTML = `<span class="col-site ${siteClass}">[${site}]</span><span class="raw-fallback">${clean}</span>`;
+      }
+      return row;
+    }
+
+    function flushBatch() {
+      renderScheduled = false;
+      if (isPaused || pendingLogs.length === 0) return;
+
+      const fragment = document.createDocumentFragment();
+      const addedCount = pendingLogs.length;
+
+      if (newestOnTop) {
+        for (let i = pendingLogs.length - 1; i >= 0; i--) {
+          fragment.appendChild(pendingLogs[i]);
+        }
+        container.insertBefore(fragment, container.firstChild);
+      } else {
+        for (let i = 0; i < pendingLogs.length; i++) {
+          fragment.appendChild(pendingLogs[i]);
+        }
+        container.appendChild(fragment);
+      }
+      pendingLogs = [];
+
+      totalLines += addedCount;
+      countLabel.textContent = `${totalLines} stream lines`;
+
+      const excess = container.children.length - MAX_LINES;
+      if (excess > 0) {
+        for (let i = 0; i < excess; i++) {
+          if (newestOnTop) {
+            container.removeChild(container.lastChild);
+          } else {
+            container.removeChild(container.firstChild);
+          }
+        }
+      }
+
+      if (autoScroll) {
+        if (newestOnTop) {
+          container.scrollTop = 0;
+        } else {
+          container.scrollTop = container.scrollHeight;
+        }
+      }
+    }
+
+    function queueLogLine(site, raw) {
+      if (isPaused) return;
+      pendingLogs.push(createRowElement(site, raw));
+
+      if (!renderScheduled) {
+        renderScheduled = true;
+        setTimeout(() => {
+          requestAnimationFrame(flushBatch);
+        }, 100);
+      }
+    }
+
+    function connectSSE() {
+      const source = new EventSource("/stream");
+
+      source.onopen = () => {
+        statusBadge.textContent = "Live";
+        statusBadge.className = "badge status-connected";
+      };
+
+      source.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          queueLogLine(payload.site, payload.raw);
+        } catch (e) {
+          console.error("Parse error:", e);
+        }
+      };
+
+      source.onerror = () => {
+        statusBadge.textContent = "Disconnected";
+        statusBadge.className = "badge status-disconnected";
+      };
+    }
+
+    connectSSE();
+  </script>
+</body>
+</html>

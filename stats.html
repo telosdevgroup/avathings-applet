@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ava Analytics & Intelligence HUD</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #090d13;
+      color: #c9d1d9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      padding: 0;
+      margin: 0;
+      overflow-y: auto;
+    }
+    header {
+      background-color: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 0;
+    }
+    .main-content {
+      padding: 20px 24px;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .title {
+      font-weight: bold;
+      color: #58a6ff;
+      letter-spacing: 0.5px;
+      margin-right: 4px;
+    }
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background-color: #0d1117;
+      padding: 2px 4px;
+      border-radius: 6px;
+      border: 1px solid #30363d;
+    }
+    .filter-btn {
+      background: none;
+      border: 1px solid transparent;
+      color: #8b949e;
+      padding: 2px 8px;
+      font-size: 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+    .filter-btn:hover {
+      color: #c9d1d9;
+      background-color: #21262d;
+    }
+    .filter-btn.active {
+      color: #fff;
+      font-weight: bold;
+    }
+    .filter-btn.all.active {
+      background-color: #1f6feb;
+      border-color: #388bfd;
+    }
+    .filter-btn.site-scry.active {
+      background-color: rgba(88, 166, 255, 0.2);
+      border-color: #58a6ff;
+      color: #58a6ff;
+    }
+    .filter-btn.site-vet.active {
+      background-color: rgba(63, 185, 80, 0.2);
+      border-color: #3fb950;
+      color: #3fb950;
+    }
+    .filter-btn.site-minder.active {
+      background-color: rgba(210, 168, 255, 0.2);
+      border-color: #d2a8ff;
+      color: #d2a8ff;
+    }
+    .filter-btn.site-specs.active {
+      background-color: rgba(240, 136, 62, 0.2);
+      border-color: #f0883e;
+      color: #f0883e;
+    }
+    .filter-btn.site-vetha.active {
+      background-color: rgba(46, 160, 67, 0.2);
+      border-color: #2ea043;
+      color: #2ea043;
+    }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+    button.action-btn, a.action-link {
+      background-color: #21262d;
+      color: #c9d1d9;
+      border: 1px solid #30363d;
+      padding: 3px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+    }
+    button.action-btn:hover, a.action-link:hover {
+      background-color: #30363d;
+      color: #fff;
+    }
+
+    /* SUMMARY STAT TILES */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .tile {
+      background-color: #11151c;
+      border: 1px solid #21262d;
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+    .tile-title {
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      color: #8b949e;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .tile-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #e6edf3;
+      font-family: Consolas, monospace;
+    }
+    .tile-sub {
+      font-size: 11px;
+      color: #8b949e;
+      margin-top: 4px;
+    }
+
+    /* MAIN COLUMNS */
+    .analytics-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr 0.8fr;
+      gap: 20px;
+    }
+    .card {
+      background-color: #11151c;
+      border: 1px solid #21262d;
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .card-header {
+      font-size: 12px;
+      font-weight: 700;
+      color: #58a6ff;
+      letter-spacing: 0.5px;
+      border-bottom: 1px dashed #30363d;
+      padding-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* CATEGORY SECTIONS */
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 6px 0 2px 0;
+      margin-top: 6px;
+      border-bottom: 1px solid #21262d;
+      display: flex;
+      justify-content: space-between;
+    }
+    .sec-citations { color: #58a6ff; }
+    .sec-search { color: #3fb950; }
+    .sec-leeches { color: #d29922; }
+    .sec-internal { color: #bc8cff; }
+    .sec-scanners { color: #f85149; }
+
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+      font-family: Consolas, monospace;
+      font-size: 12px;
+      border-bottom: 1px solid #161b22;
+    }
+    .data-row:hover {
+      background-color: #161b22;
+    }
+    .data-name {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .data-count {
+      color: #e6edf3;
+      font-weight: 600;
+      margin-left: 12px;
+      flex-shrink: 0;
+    }
+    .data-pct {
+      color: #8b949e;
+      font-size: 11px;
+      width: 45px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-cit { background: #58a6ff; box-shadow: 0 0 6px rgba(88, 166, 255, 0.6); }
+    .dot-sea { background: #3fb950; box-shadow: 0 0 6px rgba(63, 185, 80, 0.6); }
+    .dot-lee { background: #d29922; }
+    .dot-int { background: #bc8cff; }
+    .dot-sca { background: #f85149; }
+    .dot-sur { background: #d2a8ff; }
+    .dot-fmt { background: #79c0ff; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <span class="title">⚡ AVA TRAFFIC</span>
+      <span class="badge" style="background-color: #8957e5; color: #fff; margin-right: 6px;">STATS HUD</span>
+      <div class="filter-group">
+        <button class="filter-btn all active" onclick="switchSite('ALL', this)">ALL SITES</button>
+        <button class="filter-btn site-scry" onclick="switchSite('AvaScry', this)">AvaScry</button>
+        <button class="filter-btn site-specs" onclick="switchSite('AvaSpecs', this)">AvaSpecs</button>
+        <button class="filter-btn site-vet" onclick="switchSite('VetGems', this)">VetGems</button>
+        <button class="filter-btn site-minder" onclick="switchSite('AvaMinder', this)">AvaMinder</button>
+        <button class="filter-btn site-vetha" onclick="switchSite('VethaGolf', this)">VethaGolf</button>
+      </div>
+    </div>
+    <div class="controls">
+      <a href="/" target="_self" class="action-link">⚡ Stream</a>
+      <a href="/stats" target="_self" class="action-link" style="background-color: #1f6feb; border-color: #388bfd; color: #fff; font-weight: bold;">📊 Stats</a>
+      <a href="/citations" target="_self" class="action-link">🎯 Citations</a>
+      <span style="color: #30363d; margin: 0 4px;">|</span>
+      <button class="action-btn" onclick="loadStats()">↻ Refresh</button>
+    </div>
+  </header>
+
+  <div class="main-content">
+  <!-- 4 SUMMARY TILES -->
+  <div class="summary-grid">
+    <div class="tile">
+      <div class="tile-title">Total Requests</div>
+      <div id="tile-total" class="tile-value">-</div>
+      <div id="tile-total-sub" class="tile-sub">All logged hits</div>
+    </div>
+    <a href="/citations" style="text-decoration: none;" class="tile">
+      <div class="tile-title" style="color: #58a6ff;">🎯 Content Citations (AI User-Agents) ↗</div>
+      <div id="tile-citations" class="tile-value" style="color: #58a6ff;">-</div>
+      <div class="tile-sub">Click to open full citations ledger</div>
+    </a>
+    <div class="tile">
+      <div class="tile-title">🔍 Search Engines (Google/Bing/AI)</div>
+      <div id="tile-search" class="tile-value" style="color: #3fb950;">-</div>
+      <div class="tile-sub">Indexing content for discovery</div>
+    </div>
+    <div class="tile">
+      <div class="tile-title">⚡ Training Harvesters (Leeches)</div>
+      <div id="tile-leeches" class="tile-value" style="color: #d29922;">-</div>
+      <div id="tile-leeches-sub" class="tile-sub">% of all bandwidth</div>
+    </div>
+  </div>
+
+  <!-- MAIN 3 COLUMNS -->
+  <div class="analytics-grid">
+    <!-- COLUMN 1: TRAFFIC CLASSIFICATION -->
+    <div class="card">
+      <div class="card-header">
+        <span>TRAFFIC SOURCE TAXONOMY</span>
+        <span>REQS (% TOTAL)</span>
+      </div>
+      <div id="taxonomy-container">Loading...</div>
+    </div>
+
+    <!-- COLUMN 2: SURFACES -->
+    <div class="card">
+      <div class="card-header">
+        <span>SURFACE / CONTENT ROUTE</span>
+        <span>REQS</span>
+      </div>
+      <div id="surfaces-container"></div>
+    </div>
+
+    <!-- COLUMN 3: FORMATS -->
+    <div class="card">
+      <div class="card-header">
+        <span>CONTENT FORMAT</span>
+        <span>REQS</span>
+      </div>
+      <div id="formats-container"></div>
+    </div>
+  </div>
+
+  <script>
+    let statsData = null;
+    const urlParams = new URLSearchParams(window.location.search);
+    let currentSite = urlParams.get("site") || "ALL";
+
+    async function loadStats() {
+      try {
+        const resp = await fetch("/api/stats");
+        const data = await resp.json();
+        if (!data.loading) {
+          statsData = data;
+          applySiteUI(currentSite);
+          render();
+        } else {
+          setTimeout(loadStats, 1000);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function applySiteUI(site) {
+      document.querySelectorAll(".filter-btn").forEach(b => {
+        const onclickAttr = b.getAttribute("onclick") || "";
+        if (onclickAttr.includes(`'${site}'`)) {
+          b.classList.add("active");
+        } else {
+          b.classList.remove("active");
+        }
+      });
+    }
+
+    function switchSite(site, btn) {
+      currentSite = site;
+      const url = new URL(window.location);
+      if (site === "ALL") {
+        url.searchParams.delete("site");
+      } else {
+        url.searchParams.set("site", site);
+      }
+      window.history.replaceState({}, "", url);
+
+      document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+      if (btn) btn.classList.add("active");
+      render();
+    }
+
+    function render() {
+      if (!statsData) return;
+      const data = statsData[currentSite] || statsData["ALL"];
+      if (!data) return;
+
+      const total = data.total;
+      document.getElementById("tile-total").textContent = total.toLocaleString();
+
+      // Separate into strict buckets
+      const citations = [];
+      const search = [];
+      const leeches = [];
+      const internal = [];
+      const scanners = [];
+      const others = [];
+
+      let citSum = 0;
+      let seaSum = 0;
+      let leeSum = 0;
+
+      data.sources.forEach(s => {
+        const n = s.name.toLowerCase();
+        if (s.tier === "citation" || (n.includes("user") && (n.includes("citation") || n.includes("chatgpt") || n.includes("claude") || n.includes("perplexity")))) {
+          citations.push(s);
+          citSum += s.count;
+        } else if (s.tier === "search" || s.tier === "target") {
+          search.push(s);
+          seaSum += s.count;
+        } else if (s.tier === "leech") {
+          leeches.push(s);
+          leeSum += s.count;
+        } else if (s.tier === "internal") {
+          internal.push(s);
+        } else if (s.tier === "scanner") {
+          scanners.push(s);
+        } else {
+          others.push(s);
+        }
+      });
+
+      document.getElementById("tile-citations").textContent = citSum.toLocaleString();
+      document.getElementById("tile-search").textContent = seaSum.toLocaleString();
+      document.getElementById("tile-leeches").textContent = leeSum.toLocaleString();
+      document.getElementById("tile-leeches-sub").textContent = `${((leeSum / total) * 100).toFixed(1)}% of total traffic`;
+
+      function renderGroup(title, items, cssClass, dotClass) {
+        if (!items || items.length === 0) return "";
+        const groupSum = items.reduce((acc, i) => acc + i.count, 0);
+        let html = `
+          <div class="section-title ${cssClass}">
+            <span>${title}</span>
+            <span>${groupSum.toLocaleString()} (${((groupSum / total) * 100).toFixed(1)}%)</span>
+          </div>
+        `;
+        items.forEach(i => {
+          const pct = ((i.count / total) * 100).toFixed(1);
+          html += `
+            <div class="data-row">
+              <span class="data-name"><span class="dot ${dotClass}"></span>${i.name}</span>
+              <div style="display:flex; align-items:center;">
+                <span class="data-count">${i.count.toLocaleString()}</span>
+                <span class="data-pct">${pct}%</span>
+              </div>
+            </div>
+          `;
+        });
+        return html;
+      }
+
+      let taxHtml = "";
+      taxHtml += renderGroup("🎯 Citations (User Prompts)", citations, "sec-citations", "dot-cit");
+      taxHtml += renderGroup("🔍 Search Indexers (Google, Bing, Agents)", search, "sec-search", "dot-sea");
+      taxHtml += renderGroup("⚡ Model Training Harvesters (Leeches)", leeches, "sec-leeches", "dot-lee");
+      taxHtml += renderGroup("🧪 Internal Tests & Dev", internal, "sec-internal", "dot-int");
+      taxHtml += renderGroup("🚫 Vulnerability Scanners", scanners, "sec-scanners", "dot-sca");
+      taxHtml += renderGroup("🌐 Other / Browsers", others, "", "dot-int");
+
+      document.getElementById("taxonomy-container").innerHTML = taxHtml;
+
+      // Surfaces
+      document.getElementById("surfaces-container").innerHTML = data.surfaces.map(s => `
+        <div class="data-row">
+          <span class="data-name"><span class="dot dot-sur"></span>${s.name}</span>
+          <div style="display:flex; align-items:center;">
+            <span class="data-count">${s.count.toLocaleString()}</span>
+            <span class="data-pct">${((s.count / total) * 100).toFixed(1)}%</span>
+          </div>
+        </div>
+      `).join("");
+
+      // Formats
+      document.getElementById("formats-container").innerHTML = data.formats.map(f => `
+        <div class="data-row">
+          <span class="data-name"><span class="dot dot-fmt"></span>${f.name}</span>
+          <div style="display:flex; align-items:center;">
+            <span class="data-count">${f.count.toLocaleString()}</span>
+            <span class="data-pct">${((f.count / total) * 100).toFixed(1)}%</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    loadStats();
+  </script>
+  </div>
+</body>
+</html>
