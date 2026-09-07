@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 AvaThings Unified Terminal Traffic Watcher 2.0
 Multi-site modular live traffic watcher across all Telos ecosystem sites:
@@ -27,7 +27,7 @@ if hasattr(sys.stdout, 'reconfigure'):
         pass
 
 from sites import ALL_PARSERS, SITE_REGISTRY, FORMAT_BADGES
-from sites.base import CYAN, GREEN, YELLOW, RED, BLUE, MAGENTA, BOLD, DIM, RESET
+from sites.base import CYAN, GREEN, YELLOW, RED, BLUE, MAGENTA, ORANGE, BOLD, DIM, RESET
 
 class TrafficHub:
     def __init__(self):
@@ -127,7 +127,7 @@ def render_screen(hub: TrafficHub):
         f"  {BOLD}TOTAL:{RESET} {GREEN}{hub.total_requests:,}{RESET}  |  "
         f"{YELLOW}AvaScry:{RESET} {tot_scry:,} "
         f"({YELLOW}MTG:{hub.subsite_counts['MTG']}{RESET} {RED}NEC:{hub.subsite_counts['NEC']}{RESET} {CYAN}DOM:{hub.subsite_counts['DOM']}{RESET} {MAGENTA}SWU:{hub.subsite_counts['SWU']}{RESET})  |  "
-        f"{YELLOW}Specs:{RESET} {tot_specs:,}  |  "
+        f"{ORANGE}Specs:{RESET} {tot_specs:,}  |  "
         f"{GREEN}VetGems:{RESET} {tot_vet:,}  |  "
         f"{MAGENTA}Minder:{RESET} {tot_mndr:,}  |  "
         f"{GREEN}Golf:{RESET} {tot_golf:,}"

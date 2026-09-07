@@ -1,17 +1,17 @@
-﻿import re
+import re
 from .base import (
     BaseSiteParser,
-    YELLOW, CYAN, MAGENTA, RED, GREEN, BLUE, BOLD, DIM, RESET
+    YELLOW, CYAN, MAGENTA, RED, GREEN, BLUE, ORANGE, BOLD, DIM, RESET
 )
 
 class AvaSpecsParser(BaseSiteParser):
     site_key = "avaspecs"
     display_name = "AvaSpecs"
     default_log_path = r"C:\Users\dev\Code\tdg\avaspecs-v2\logs\access.log"
-    site_badge = f"{YELLOW}{BOLD}[SPEC]{RESET}"
+    site_badge = f"{ORANGE}{BOLD}[SPEC]{RESET}"
 
     SURFACE_BADGES = {
-        "COMP": f"{YELLOW}{BOLD}[COMP]{RESET}",
+        "COMP": f"{ORANGE}{BOLD}[COMP]{RESET}",
         "REG":  f"{BLUE}{BOLD}[REG ]{RESET}",
         "PROD": f"{GREEN}{BOLD}[PROD]{RESET}",
         "ENTY": f"{MAGENTA}[ENTY]{RESET}",
