@@ -1,4 +1,4 @@
-﻿import re
+import re
 from .base import (
     BaseSiteParser,
     YELLOW, CYAN, MAGENTA, RED, GREEN, BLUE, BOLD, DIM, RESET
@@ -53,6 +53,8 @@ class AvaScryParser(BaseSiteParser):
         # 1. Determine subsite (MTG, NEC, DOM, SWU)
         if sub_raw in self.SUBSITE_BADGES:
             subsite = sub_raw
+        elif sub_raw in ("NECR", "NECROMUNDA"):
+            subsite = "NEC"
         elif clean_p.startswith("/necromunda"):
             subsite = "NEC"
         elif clean_p.startswith("/dominion"):
@@ -73,31 +75,38 @@ class AvaScryParser(BaseSiteParser):
                 break
 
         if not raw_surf:
-            if clean_p.startswith(("/printing/", "/card/")):
+            # Strip subsite prefix to evaluate canonical sub-resource
+            route_p = clean_p
+            for pfx in ("/necromunda", "/dominion", "/swu"):
+                if route_p.startswith(pfx):
+                    route_p = route_p[len(pfx):] or "/"
+                    break
+
+            if route_p.startswith(("/printing/", "/card/")):
                 raw_surf = "CARD" if subsite in ("DOM", "SWU") else "PRIN"
-            elif clean_p.startswith("/similar/"):
-                raw_surf = "SIM"
-            elif clean_p.startswith("/vector"):
-                raw_surf = "VECT"
-            elif clean_p.startswith("/artist/"):
-                raw_surf = "ARTS"
-            elif clean_p.startswith("/set/") or clean_p in ("/sets", "/set"):
-                raw_surf = "SETS"
-            elif clean_p.startswith(("/commander", "/commanders")):
-                raw_surf = "CMDR"
-            elif clean_p.startswith("/weapon/"):
+            elif route_p.startswith("/weapon/"):
                 raw_surf = "WEAP"
-            elif clean_p.startswith("/trait/"):
+            elif route_p.startswith("/trait/"):
                 raw_surf = "TRAT"
-            elif clean_p.startswith("/house/"):
+            elif route_p.startswith("/house/"):
                 raw_surf = "HOUS"
-            elif clean_p.startswith("/skill/"):
+            elif route_p.startswith("/skill/"):
                 raw_surf = "SKIL"
-            elif clean_p.startswith("/images/") or clean_p.endswith((".jpg", ".png", ".webp")):
+            elif route_p.startswith("/similar/"):
+                raw_surf = "SIM"
+            elif route_p.startswith("/vector"):
+                raw_surf = "VECT"
+            elif route_p.startswith("/artist/"):
+                raw_surf = "ARTS"
+            elif route_p.startswith("/set/") or route_p in ("/sets", "/set"):
+                raw_surf = "SETS"
+            elif route_p.startswith(("/commander", "/commanders")):
+                raw_surf = "CMDR"
+            elif route_p.startswith("/images/") or route_p.endswith((".jpg", ".png", ".webp")):
                 raw_surf = "IMG"
-            elif clean_p.startswith("/llms"):
+            elif route_p.startswith("/llms") or "sitemap" in route_p:
                 raw_surf = "LLMS"
-            elif clean_p in ("/", "/index", "/home", "/favicon.ico"):
+            elif route_p in ("/", "/index", "/home", "/favicon.ico"):
                 raw_surf = "HOME"
             else:
                 raw_surf = "OTHR"
