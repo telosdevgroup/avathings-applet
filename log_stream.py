@@ -316,17 +316,46 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+def extract_subsite_fast(line_str: str) -> str:
+    """Fast extraction of AvaScry subsite code."""
+    lower = line_str.lower()
+    # Check path first
+    if " -> " in line_str:
+        p = line_str.split(" -> ")[1].split(" ")[1].lower() if len(line_str.split(" -> ")[1].split(" ")) > 1 else ""
+        if p.startswith("/minecraft"):
+            return "MINE"
+        if p.startswith("/necromunda"):
+            return "NEC"
+        if p.startswith("/dominion"):
+            return "DOM"
+        if p.startswith("/swu"):
+            return "SWU"
+    # Check tags
+    for tag, code in [("[mine]", "MINE"), ("[mc]", "MINE"), ("[dom]", "DOM"), ("[swu]", "SWU"), ("[nec]", "NEC"), ("[necr]", "NEC"), ("[mtg]", "MTG")]:
+        if tag in lower:
+            return code
+    return "MTG"
+
 async def event_generator(site_filter: str = "ALL") -> AsyncGenerator[str, None]:
     queue: asyncio.Queue = asyncio.Queue(maxsize=2000)
     subscribers.add(queue)
     try:
         yield f"event: ping\ndata: {json.dumps({'status': 'connected'})}\n\n"
 
+        # Check if site_filter is an AvaScry subsite e.g. "AvaScry-SWU", "AvaScry-DOM", "AvaScry-MTG", etc.
+        sub_filter = None
+        target_site = site_filter
+        if site_filter.startswith("AvaScry-"):
+            target_site = "AvaScry"
+            sub_filter = site_filter.split("AvaScry-")[1].upper()
+
         # Replay generous initial lines from RAM so the user never sees an empty screen!
-        if site_filter != "ALL" and site_filter in recent_logs_by_site:
-            hist = list(recent_logs_by_site[site_filter])[-500:]
-            for raw_line in hist:
-                yield f"data: {json.dumps({'site': site_filter, 'raw': raw_line})}\n\n"
+        if target_site != "ALL" and target_site in recent_logs_by_site:
+            hist = list(recent_logs_by_site[target_site])
+            if sub_filter:
+                hist = [l for l in hist if extract_subsite_fast(l) == sub_filter]
+            for raw_line in hist[-500:]:
+                yield f"data: {json.dumps({'site': target_site, 'raw': raw_line})}\n\n"
         else:
             # Replay recent 500 lines across all sites
             hist = list(recent_logs_all)[-500:]
@@ -425,9 +454,18 @@ async def get_citations():
 @app.get("/api/recent")
 async def get_recent_logs(site: str = "ALL", limit: int = 1000):
     """Returns recent lines from in-memory RAM buffer for instant client hydration."""
-    if site != "ALL" and site in recent_logs_by_site:
-        raw_items = list(recent_logs_by_site[site])[-limit:]
-        items = [{"site": site, "raw": line} for line in raw_items]
+    sub_filter = None
+    target_site = site
+    if site.startswith("AvaScry-"):
+        target_site = "AvaScry"
+        sub_filter = site.split("AvaScry-")[1].upper()
+
+    if target_site != "ALL" and target_site in recent_logs_by_site:
+        raw_items = list(recent_logs_by_site[target_site])
+        if sub_filter:
+            raw_items = [l for l in raw_items if extract_subsite_fast(l) == sub_filter]
+        raw_items = raw_items[-limit:]
+        items = [{"site": target_site, "raw": line} for line in raw_items]
     else:
         raw_items = list(recent_logs_all)[-limit:]
         items = [{"site": s, "raw": line} for s, line in raw_items]

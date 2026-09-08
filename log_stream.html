@@ -72,6 +72,37 @@
       color: #fff;
       font-weight: bold;
     }
+    /* Top Bar & Sub-site Selector */
+    .filter-btn.sub-btn {
+      font-size: 11px;
+      padding: 1px 6px;
+    }
+    .filter-btn.sub-scry-all.active { background-color: #1f6feb; border-color: #388bfd; color: #fff; }
+    .filter-btn.sub-mtg.active { background-color: rgba(227, 179, 65, 0.25); border-color: #e3b341; color: #e3b341; }
+    .filter-btn.sub-dom.active { background-color: rgba(88, 166, 255, 0.25); border-color: #58a6ff; color: #58a6ff; }
+    .filter-btn.sub-swu.active { background-color: rgba(219, 97, 162, 0.25); border-color: #db61a2; color: #db61a2; }
+    .filter-btn.sub-nec.active { background-color: rgba(248, 81, 73, 0.25); border-color: #f85149; color: #f85149; }
+    .filter-btn.sub-mine.active { background-color: rgba(63, 185, 80, 0.25); border-color: #3fb950; color: #3fb950; }
+
+    #avascry-subbar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 16px;
+      background-color: #11161d;
+      border-bottom: 1px solid #21262d;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    .subbar-label {
+      color: #8b949e;
+      font-weight: bold;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-right: 2px;
+    }
+
     .filter-btn.all.active {
       background-color: #1f6feb;
       border-color: #388bfd;
@@ -158,15 +189,12 @@
       display: flex;
       flex-direction: column;
       gap: 1px;
-      contain: content;
-      user-select: text;
     }
     .log-row {
-      white-space: nowrap;
-      font-size: 13px;
       display: flex;
-      align-items: baseline;
-      gap: 8px;
+      align-items: center;
+      gap: 12px;
+      white-space: nowrap;
       padding: 1px 0;
       contain: layout style;
     }
@@ -178,14 +206,21 @@
     }
     .col-site {
       font-weight: bold;
-      width: 105px;
+      width: 135px;
       flex-shrink: 0;
+      display: inline-block;
     }
-    .site-avascry { color: #58a6ff; }
-    .site-vetgems { color: #3fb950; }
-    .site-avaminder { color: #d2a8ff; }
-    .site-avaspecs { color: #f0883e; }
-    .site-vethagolf { color: #2ea043; }
+    /* Site & Subsite Colors */
+    .site-avascry-mtg  { color: #e3b341; } /* Gold / Yellow */
+    .site-avascry-dom  { color: #58a6ff; } /* Cyan / Blue */
+    .site-avascry-swu  { color: #db61a2; } /* Magenta / Pink */
+    .site-avascry-nec  { color: #f85149; } /* Red */
+    .site-avascry-mine { color: #3fb950; } /* Green */
+    .site-avascry      { color: #e3b341; }
+    .site-vetgems      { color: #3fb950; }
+    .site-avaminder    { color: #d2a8ff; }
+    .site-avaspecs     { color: #f0883e; }
+    .site-vethagolf    { color: #2ea043; }
     .col-bot {
       color: #d29922;
       width: 145px;
@@ -292,6 +327,19 @@
     </div>
   </header>
 
+  <!-- Dedicated AvaScry Sub-sites Selector Bar -->
+  <div id="avascry-subbar">
+    <span class="subbar-label">🔮 AvaScry Network:</span>
+    <div class="filter-group" style="border: none; padding: 0;">
+      <button class="filter-btn sub-btn sub-scry-all active" onclick="setSubFilter('ALL', this)">ALL AVASCRY</button>
+      <button class="filter-btn sub-btn sub-mtg" onclick="setSubFilter('MTG', this)">⚡ MTG (Apex)</button>
+      <button class="filter-btn sub-btn sub-dom" onclick="setSubFilter('DOM', this)">👑 Dominion</button>
+      <button class="filter-btn sub-btn sub-swu" onclick="setSubFilter('SWU', this)">🚀 SWU</button>
+      <button class="filter-btn sub-btn sub-nec" onclick="setSubFilter('NEC', this)">💀 Necromunda</button>
+      <button class="filter-btn sub-btn sub-mine" onclick="setSubFilter('MINE', this)">⛏️ Minecraft</button>
+    </div>
+  </div>
+
   <div id="stream-container"></div>
 
   <script>
@@ -355,11 +403,36 @@
       }
       window.history.replaceState({}, "", url);
 
-      document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
+      document.querySelectorAll(".header-left .filter-btn").forEach(btn => btn.classList.remove("active"));
       if (btnElement) btnElement.classList.add("active");
+
+      // Reset subbar to ALL when switching top-level site
+      document.querySelectorAll("#avascry-subbar .sub-btn").forEach(b => b.classList.remove("active"));
+      const allSub = document.querySelector("#avascry-subbar .sub-scry-all");
+      if (allSub) allSub.classList.add("active");
 
       // Instantly load recent lines for this site from the server's RAM buffer
       loadRecentLogsForFilter(site);
+    }
+
+    function setSubFilter(sub, btnElement) {
+      // Highlight top-level AvaScry tab
+      document.querySelectorAll(".header-left .filter-btn").forEach(btn => btn.classList.remove("active"));
+      const scryBtn = document.querySelector(".header-left .filter-btn.site-scry");
+      if (scryBtn) scryBtn.classList.add("active");
+
+      // Highlight sub-button
+      document.querySelectorAll("#avascry-subbar .sub-btn").forEach(btn => btn.classList.remove("active"));
+      if (btnElement) btnElement.classList.add("active");
+
+      const filterKey = sub === "ALL" ? "AvaScry" : `AvaScry-${sub}`;
+      currentFilter = filterKey;
+
+      const url = new URL(window.location);
+      url.searchParams.set("site", filterKey);
+      window.history.replaceState({}, "", url);
+
+      loadRecentLogsForFilter(filterKey);
     }
 
     container.addEventListener("scroll", () => {
@@ -389,14 +462,35 @@
 
     const LINE_REGEX = /\[(?<bot>[^\]]+)\]\s*(?:\[(?<subsite>[A-Z0-9_\s]{2,5})\])?\s*\d+\s+\(\s*(?<ms>[^)]+)\)\s*(?<tags>(?:\[[^\]]+\]\s*)+)->\s+(?<method>[A-Z]+)\s+(?<path>[^\s"]+)/;
 
-    function getSiteClass(site) {
+    function detectSubsite(raw, path, subsiteTag) {
+      const p = (path || "").toLowerCase();
+      if (p.startsWith("/minecraft")) return "MINE";
+      if (p.startsWith("/necromunda")) return "NEC";
+      if (p.startsWith("/dominion")) return "DOM";
+      if (p.startsWith("/swu")) return "SWU";
+      const tag = (subsiteTag || "").trim().toUpperCase();
+      if (tag === "MC" || tag === "MINE") return "MINE";
+      if (tag === "NECR" || tag === "NEC") return "NEC";
+      if (tag === "DOM") return "DOM";
+      if (tag === "SWU") return "SWU";
+      if (tag === "MTG") return "MTG";
+      return "MTG";
+    }
+
+    function getSiteClassAndLabel(site, raw, path, subsiteTag) {
       const lower = site.toLowerCase();
-      if (lower.includes("scry")) return "site-avascry";
-      if (lower.includes("vetgems")) return "site-vetgems";
-      if (lower.includes("vetha")) return "site-vethagolf";
-      if (lower.includes("minder")) return "site-avaminder";
-      if (lower.includes("specs")) return "site-avaspecs";
-      return "";
+      if (lower.includes("scry")) {
+        const sub = detectSubsite(raw, path, subsiteTag);
+        return {
+          cssClass: `site-avascry-${sub.toLowerCase()}`,
+          label: `AvaScry-${sub}`
+        };
+      }
+      if (lower.includes("vetgems")) return { cssClass: "site-vetgems", label: "VetGems" };
+      if (lower.includes("vetha")) return { cssClass: "site-vethagolf", label: "VethaGolf" };
+      if (lower.includes("minder")) return { cssClass: "site-avaminder", label: "AvaMinder" };
+      if (lower.includes("specs")) return { cssClass: "site-avaspecs", label: "AvaSpecs" };
+      return { cssClass: "", label: site };
     }
 
     function formatTwoPills(tagsStr, path) {
@@ -437,6 +531,10 @@
         else if (p.startsWith("/practice/")) surf = "VET";
         else if (p.startsWith("/venue/")) surf = "VENU";
         else if (p.startsWith("/search") || p.startsWith("/find")) surf = "SRCH";
+        else if (p.startsWith("/item/")) surf = "ITEM";
+        else if (p.startsWith("/block/")) surf = "BLOK";
+        else if (p.startsWith("/recipe/")) surf = "REC";
+        else if (p.startsWith("/enchantment/")) surf = "ENCH";
         else if (p.startsWith("/llms")) surf = "LLMS";
         else if (p === "/" || p === "") surf = "HOME";
         else surf = "OTHR";
@@ -458,7 +556,8 @@
         SETS: "surf-sets", IMG: "surf-img", COMP: "surf-comp", REG: "surf-reg",
         PROD: "surf-prod", ENTY: "surf-enty", RCLL: "surf-rcll", "510K": "surf-510k",
         VET: "surf-vet", HOME: "surf-home", CMDR: "surf-sim", MAP: "surf-arts",
-        VENU: "surf-venu", SRCH: "surf-srch", LLMS: "surf-llms"
+        VENU: "surf-venu", SRCH: "surf-srch", LLMS: "surf-llms",
+        ITEM: "surf-vect", BLOK: "surf-arts", REC: "surf-reg", ENCH: "surf-prin"
       };
       const surfClass = surfClassMap[surf] || "surf-othr";
 
@@ -479,17 +578,44 @@
       const match = raw.match(LINE_REGEX);
       const row = document.createElement("div");
       row.className = "log-row";
-      row.setAttribute("data-site", site);
       row.title = raw;
 
-      if (currentFilter !== "ALL" && currentFilter !== site) {
+      let subsiteTag = "";
+      let path = "";
+      let method = "GET";
+      let bot = "Unknown";
+      let ms = "0ms";
+      let tags = "";
+
+      if (match && match.groups) {
+        bot = match.groups.bot;
+        subsiteTag = match.groups.subsite || "";
+        ms = match.groups.ms;
+        tags = match.groups.tags;
+        method = match.groups.method;
+        path = match.groups.path;
+      }
+
+      const { cssClass, label } = getSiteClassAndLabel(site, raw, path, subsiteTag);
+      row.setAttribute("data-site", site);
+      row.setAttribute("data-fullsite", label);
+
+      // Check visibility under currentFilter
+      let visible = true;
+      if (currentFilter !== "ALL") {
+        if (currentFilter.startsWith("AvaScry-")) {
+          visible = (label === currentFilter);
+        } else if (currentFilter === "AvaScry") {
+          visible = (site === "AvaScry");
+        } else {
+          visible = (site === currentFilter);
+        }
+      }
+      if (!visible) {
         row.classList.add("hidden");
       }
 
-      const siteClass = getSiteClass(site);
-
       if (match && match.groups) {
-        const { bot, subsite, ms, tags, method, path } = match.groups;
         const lowerBot = bot.toLowerCase();
         let botClass = "";
         if (lowerBot.includes("meta")) botClass = "meta";
@@ -501,10 +627,9 @@
         else if (lowerBot.includes("shap")) botClass = "shapbot";
 
         const tagsHtml = formatTwoPills(tags, path);
-        const displaySite = subsite ? subsite.trim() : site;
 
         row.innerHTML = `
-          <span class="col-site ${siteClass}">[${displaySite}]</span>
+          <span class="col-site ${cssClass}">[${label}]</span>
           <span class="col-bot ${botClass}">[${bot}]</span>
           <span class="col-time">(${ms.trim()})</span>
           ${tagsHtml}
@@ -516,7 +641,7 @@
         `;
       } else {
         let clean = raw.replace(/^\d{4}-\d{2}-\d{2}T[^\s]+\s+[^\s]+\s+/, "").replace(/"[^"]*"/g, "").trim();
-        row.innerHTML = `<span class="col-site ${siteClass}">[${site}]</span><span class="raw-fallback">${clean}</span>`;
+        row.innerHTML = `<span class="col-site ${cssClass}">[${label}]</span><span class="raw-fallback">${clean}</span>`;
       }
       return row;
     }
@@ -613,7 +738,7 @@
       activeEventSource.onmessage = (event) => {
         try {
           const payload = JSON.parse(event.data);
-          if (currentFilter === "ALL" || payload.site === currentFilter) {
+          if (currentFilter === "ALL" || payload.site === currentFilter || currentFilter.startsWith("AvaScry-")) {
             queueLogLine(payload.site, payload.raw);
           }
         } catch (e) {
