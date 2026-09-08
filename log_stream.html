@@ -626,11 +626,17 @@
         else if (lowerBot.includes("amazon")) botClass = "amazon";
         else if (lowerBot.includes("shap")) botClass = "shapbot";
 
-        const tagsHtml = formatTwoPills(tags, path);
+        let botHtml = `[${bot}]`;
+        if (lowerBot.includes("google")) {
+          // Google brand colors: G(blue), o(red), o(yellow), g(blue), l(green), e(red)
+          const gBrand = '<span style="color:#4285F4">G</span><span style="color:#EA4335">o</span><span style="color:#FBBC05">o</span><span style="color:#4285F4">g</span><span style="color:#34A853">l</span><span style="color:#EA4335">e</span>';
+          const formatted = bot.replace(/google/i, gBrand);
+          botHtml = `[${formatted}]`;
+        }
 
         row.innerHTML = `
           <span class="col-site ${cssClass}">[${label}]</span>
-          <span class="col-bot ${botClass}">[${bot}]</span>
+          <span class="col-bot ${botClass}">${botHtml}</span>
           <span class="col-time">(${ms.trim()})</span>
           ${tagsHtml}
           <span class="col-action">

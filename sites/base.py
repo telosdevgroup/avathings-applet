@@ -40,12 +40,16 @@ class BaseSiteParser:
         low_l = lower_line.lower()
 
         # Known search crawlers & leeches
+        # Google brand colors: G(blue), o(red), o(yellow), g(blue), l(green), e(red)
+        _g_brand = f"{BLUE}G{RESET}{RED}o{RESET}{YELLOW}o{RESET}{BLUE}g{RESET}{GREEN}l{RESET}{RED}e{RESET}"
         if "googlebot-image" in low_b or "googlebot-image" in low_l:
-            return "Google Images", f"{GREEN}[G:Img     ]{RESET}"
+            return "Google Images", f"[{_g_brand}:Img]"
         if "googleother" in low_b or "googleother" in low_l:
-            return "GoogleOther", f"{GREEN}[GoogleOthr]{RESET}"
+            return "GoogleOther", f"[{_g_brand}Othr]"
         if "googlebot" in low_b or "googlebot" in low_l or "google" in low_b:
-            return "Googlebot", f"{GREEN}[Googlebot ]{RESET}"
+            suffix = raw_b.replace("Google", "").replace("google", "").strip("[] :-_")
+            tag_name = f"{_g_brand}{suffix}" if suffix else f"{_g_brand}bot"
+            return "Googlebot", f"[{tag_name:<19}]"
         if "bingbot" in low_b or "bing" in low_l:
             return "Bingbot", f"{GREEN}[Bingbot   ]{RESET}"
         if "applebot" in low_b or "apple" in low_b or "apple" in low_l:
