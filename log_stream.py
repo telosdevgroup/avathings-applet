@@ -422,6 +422,17 @@ async def get_citations():
         "items": list(reversed(citations_list))
     })
 
+@app.get("/api/recent")
+async def get_recent_logs(site: str = "ALL", limit: int = 1000):
+    """Returns recent lines from in-memory RAM buffer for instant client hydration."""
+    if site != "ALL" and site in recent_logs_by_site:
+        raw_items = list(recent_logs_by_site[site])[-limit:]
+        items = [{"site": site, "raw": line} for line in raw_items]
+    else:
+        raw_items = list(recent_logs_all)[-limit:]
+        items = [{"site": s, "raw": line} for s, line in raw_items]
+    return JSONResponse({"site": site, "count": len(items), "lines": items})
+
 @app.get("/citations", response_class=HTMLResponse)
 async def serve_citations():
     html_path = os.path.join(os.path.dirname(__file__), "citations.html")

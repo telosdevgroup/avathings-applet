@@ -358,17 +358,8 @@
       document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
       if (btnElement) btnElement.classList.add("active");
 
-      const rows = container.querySelectorAll(".log-row");
-      rows.forEach(row => {
-        const rowSite = row.getAttribute("data-site");
-        if (currentFilter === "ALL" || rowSite === currentFilter) {
-          row.classList.remove("hidden");
-        } else {
-          row.classList.add("hidden");
-        }
-      });
-
-      resetScrollPosition();
+      // Instantly load recent lines for this site from the server's RAM buffer
+      loadRecentLogsForFilter(site);
     }
 
     container.addEventListener("scroll", () => {
@@ -585,30 +576,59 @@
       }
     }
 
-    function connectSSE() {
-      const source = new EventSource("/stream");
+    let activeEventSource = null;
 
-      source.onopen = () => {
+    async function loadRecentLogsForFilter(site) {
+      clearLogs();
+      try {
+        const res = await fetch(`/api/recent?site=${encodeURIComponent(site)}&limit=1000`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.lines && data.lines.length > 0) {
+            for (const item of data.lines) {
+              pendingLogs.push(createRowElement(item.site, item.raw));
+            }
+            flushBatch();
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch recent logs:", err);
+      }
+      connectSSE(site);
+    }
+
+    function connectSSE(site = currentFilter) {
+      if (activeEventSource) {
+        activeEventSource.close();
+      }
+
+      const streamUrl = site === "ALL" ? "/stream" : `/stream?site=${encodeURIComponent(site)}`;
+      activeEventSource = new EventSource(streamUrl);
+
+      activeEventSource.onopen = () => {
         statusBadge.textContent = "Live";
         statusBadge.className = "badge status-connected";
       };
 
-      source.onmessage = (event) => {
+      activeEventSource.onmessage = (event) => {
         try {
           const payload = JSON.parse(event.data);
-          queueLogLine(payload.site, payload.raw);
+          if (currentFilter === "ALL" || payload.site === currentFilter) {
+            queueLogLine(payload.site, payload.raw);
+          }
         } catch (e) {
           console.error("Parse error:", e);
         }
       };
 
-      source.onerror = () => {
+      activeEventSource.onerror = () => {
         statusBadge.textContent = "Disconnected";
         statusBadge.className = "badge status-disconnected";
       };
     }
 
-    connectSSE();
+    // Initial load on page load
+    loadRecentLogsForFilter(currentFilter);
   </script>
 </body>
 </html>
