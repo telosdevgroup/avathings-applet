@@ -136,7 +136,7 @@ def render_screen(hub: TrafficHub):
     lines.append(
         f"  {BOLD}TOTAL:{RESET} {GREEN}{hub.total_requests:,}{RESET}  |  "
         f"{YELLOW}AvaScry:{RESET} {tot_scry:,} "
-        f"({YELLOW}MTG:{hub.subsite_counts['MTG']}{RESET} {RED}NEC:{hub.subsite_counts['NEC']}{RESET} {CYAN}DOM:{hub.subsite_counts['DOM']}{RESET} {MAGENTA}SWU:{hub.subsite_counts['SWU']}{RESET})  |  "
+        f"({YELLOW}MTG:{hub.subsite_counts['MTG']}{RESET} {RED}NEC:{hub.subsite_counts['NEC']}{RESET} {CYAN}DOM:{hub.subsite_counts['DOM']}{RESET} {MAGENTA}SWU:{hub.subsite_counts['SWU']}{RESET} {GREEN}MC:{hub.subsite_counts['MINE']}{RESET})  |  "
         f"{ORANGE}Specs:{RESET} {tot_specs:,}  |  "
         f"{GREEN}VetGems:{RESET} {tot_vet:,}  |  "
         f"{MAGENTA}Minder:{RESET} {tot_mndr:,}  |  "
@@ -236,7 +236,7 @@ def handle_keys(hub: TrafficHub):
     if not msvcrt:
         return
 
-    scry_cycle = ["ALL", "MTG", "NEC", "DOM", "SWU"]
+    scry_cycle = ["ALL", "MTG", "NEC", "DOM", "SWU", "MINE"]
     while True:
         try:
             if msvcrt.kbhit():

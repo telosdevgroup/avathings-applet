@@ -9,12 +9,13 @@ class AvaScryParser(BaseSiteParser):
     display_name = "AvaScry Network"
     default_log_path = r"C:\avascry_data\logs\access.log"
 
-    # 4 Sub-site badges
+    # 5 Sub-site badges
     SUBSITE_BADGES = {
-        "MTG": f"{YELLOW}{BOLD}[MTG ]{RESET}",
-        "NEC": f"{RED}{BOLD}[NEC ]{RESET}",
-        "DOM": f"{CYAN}{BOLD}[DOM ]{RESET}",
-        "SWU": f"{MAGENTA}{BOLD}[SWU ]{RESET}",
+        "MTG":  f"{YELLOW}{BOLD}[MTG ]{RESET}",
+        "NEC":  f"{RED}{BOLD}[NEC ]{RESET}",
+        "DOM":  f"{CYAN}{BOLD}[DOM ]{RESET}",
+        "SWU":  f"{MAGENTA}{BOLD}[SWU ]{RESET}",
+        "MINE": f"{GREEN}{BOLD}[MINE]{RESET}",
     }
 
     SURFACE_BADGES = {
@@ -30,8 +31,15 @@ class AvaScryParser(BaseSiteParser):
         "SKIL": f"{BLUE}[SKIL]{RESET}",
         "CARD": f"{CYAN}{BOLD}[CARD]{RESET}",
         "EXPN": f"{YELLOW}[EXPN]{RESET}",
+        "ITEM": f"{GREEN}{BOLD}[ITEM]{RESET}",
+        "BLOK": f"{YELLOW}{BOLD}[BLOK]{RESET}",
+        "ENTY": f"{MAGENTA}{BOLD}[ENTY]{RESET}",
+        "REC":  f"{CYAN}{BOLD}[REC ]{RESET}",
+        "ENCH": f"{BLUE}{BOLD}[ENCH]{RESET}",
+        "PAGE": f"{CYAN}[PAGE]{RESET}",
         "IMG":  f"{BLUE}[IMG ]{RESET}",
         "LLMS": f"{MAGENTA}[LLMS]{RESET}",
+        "MAP":  f"{YELLOW}[MAP ]{RESET}",
         "HOME": f"{CYAN}[HOME]{RESET}",
         "OTHR": f"{DIM}[OTHR]{RESET}",
     }
@@ -50,17 +58,21 @@ class AvaScryParser(BaseSiteParser):
         sub_raw = (m.group("subsite") or "").strip().upper()
         clean_p = path.split("?")[0].lower()
 
-        # 1. Determine subsite (MTG, NEC, DOM, SWU)
-        if sub_raw in self.SUBSITE_BADGES:
-            subsite = sub_raw
-        elif sub_raw in ("NECR", "NECROMUNDA"):
-            subsite = "NEC"
+        # 1. Determine subsite (MTG, NEC, DOM, SWU, MINE)
+        if clean_p.startswith("/minecraft"):
+            subsite = "MINE"
         elif clean_p.startswith("/necromunda"):
             subsite = "NEC"
         elif clean_p.startswith("/dominion"):
             subsite = "DOM"
         elif clean_p.startswith("/swu"):
             subsite = "SWU"
+        elif sub_raw in self.SUBSITE_BADGES:
+            subsite = sub_raw
+        elif sub_raw in ("MC", "MINE", "MINECRAFT"):
+            subsite = "MINE"
+        elif sub_raw in ("NECR", "NECROMUNDA"):
+            subsite = "NEC"
         else:
             subsite = "MTG"
 
@@ -77,13 +89,23 @@ class AvaScryParser(BaseSiteParser):
         if not raw_surf:
             # Strip subsite prefix to evaluate canonical sub-resource
             route_p = clean_p
-            for pfx in ("/necromunda", "/dominion", "/swu"):
+            for pfx in ("/necromunda", "/dominion", "/swu", "/minecraft"):
                 if route_p.startswith(pfx):
                     route_p = route_p[len(pfx):] or "/"
                     break
 
             if route_p.startswith(("/printing/", "/card/")):
                 raw_surf = "CARD" if subsite in ("DOM", "SWU") else "PRIN"
+            elif route_p.startswith("/item/"):
+                raw_surf = "ITEM"
+            elif route_p.startswith(("/block/", "/blocks")):
+                raw_surf = "BLOK"
+            elif route_p.startswith(("/entity/", "/entities")):
+                raw_surf = "ENTY"
+            elif route_p.startswith(("/recipe/", "/recipes")):
+                raw_surf = "REC"
+            elif route_p.startswith(("/enchantment/", "/enchantments")):
+                raw_surf = "ENCH"
             elif route_p.startswith("/weapon/"):
                 raw_surf = "WEAP"
             elif route_p.startswith("/trait/"):
