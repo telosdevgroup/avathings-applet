@@ -368,7 +368,9 @@ async def event_generator(site_filter: str = "ALL") -> AsyncGenerator[str, None]
                 yield f"data: {data}\n\n"
             except asyncio.TimeoutError:
                 yield ": keepalive\n\n"
-    except asyncio.CancelledError:
+    except (asyncio.CancelledError, ConnectionResetError, BrokenPipeError):
+        pass
+    except Exception:
         pass
     finally:
         subscribers.discard(queue)
