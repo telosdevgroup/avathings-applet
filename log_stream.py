@@ -1,7 +1,7 @@
 import asyncio
 import json
 import os
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, deque
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 from fastapi import FastAPI
@@ -15,6 +15,10 @@ LOG_SOURCES = {
     "AvaSpecs": r"C:\Users\dev\Code\tdg\avaspecs-v2\logs\access.log",
     "VethaGolf": r"C:\Users\dev\Code\tdg\vethagolf-v1\logs\access.log",
 }
+
+# In-memory history buffer per site (up to 100,000 lines per site in RAM)
+recent_logs_by_site = defaultdict(lambda: deque(maxlen=100000))
+recent_logs_all = deque(maxlen=100000)
 
 site_stats = defaultdict(lambda: {
     "sources": Counter(),
@@ -224,6 +228,9 @@ async def async_ingest_all():
                         continue
                     (src, tier), surface, fmt = classify_line_fast(line_str, site)
                     
+                    recent_logs_by_site[site].append(line_str)
+                    recent_logs_all.append((site, line_str))
+
                     site_stats[site]["sources"][(src, tier)] += 1
                     if surface:
                         site_stats[site]["surfaces"][surface] += 1
@@ -258,6 +265,9 @@ async def tail_file(site_name: str, file_path: str):
                             line_str = line.strip()
                             (src, tier), surface, fmt = classify_line_fast(line_str, site_name)
                             
+                            recent_logs_by_site[site_name].append(line_str)
+                            recent_logs_all.append((site_name, line_str))
+
                             site_stats[site_name]["sources"][(src, tier)] += 1
                             if surface:
                                 site_stats[site_name]["surfaces"][surface] += 1
@@ -306,11 +316,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-async def event_generator() -> AsyncGenerator[str, None]:
-    queue: asyncio.Queue = asyncio.Queue(maxsize=1000)
+async def event_generator(site_filter: str = "ALL") -> AsyncGenerator[str, None]:
+    queue: asyncio.Queue = asyncio.Queue(maxsize=2000)
     subscribers.add(queue)
     try:
         yield f"event: ping\ndata: {json.dumps({'status': 'connected'})}\n\n"
+
+        # Replay generous initial lines from RAM so the user never sees an empty screen!
+        if site_filter != "ALL" and site_filter in recent_logs_by_site:
+            hist = list(recent_logs_by_site[site_filter])[-500:]
+            for raw_line in hist:
+                yield f"data: {json.dumps({'site': site_filter, 'raw': raw_line})}\n\n"
+        else:
+            # Replay recent 500 lines across all sites
+            hist = list(recent_logs_all)[-500:]
+            for s_name, raw_line in hist:
+                yield f"data: {json.dumps({'site': s_name, 'raw': raw_line})}\n\n"
+
         while True:
             try:
                 data = await asyncio.wait_for(queue.get(), timeout=1.0)
@@ -323,9 +345,9 @@ async def event_generator() -> AsyncGenerator[str, None]:
         subscribers.discard(queue)
 
 @app.get("/stream")
-async def stream():
+async def stream(site: str = "ALL"):
     return StreamingResponse(
-        event_generator(),
+        event_generator(site),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
