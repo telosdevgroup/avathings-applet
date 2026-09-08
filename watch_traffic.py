@@ -33,7 +33,10 @@ class TrafficHub:
     def __init__(self):
         self.site_filter = "ALL"        # "ALL", "avascry", "avaspecs", "vetgems", "avaminder", "vethagolf"
         self.avascry_sub_filter = "ALL" # "ALL", "MTG", "NEC", "DOM", "SWU"
-        self.recent_hits = deque(maxlen=2000)
+        # Keep generous queues in RAM - 100,000 hits per queue (~a few hundred MB total)
+        self.recent_hits = deque(maxlen=100000)
+        self.site_recent_hits = defaultdict(lambda: deque(maxlen=100000))
+        self.subsite_recent_hits = defaultdict(lambda: deque(maxlen=100000))
         self.total_requests = 0
 
         # Stats counters
@@ -53,16 +56,22 @@ class TrafficHub:
         surf = hit["surface_code"]
         fmt = hit["format_code"]
 
+        self.site_recent_hits[site].appendleft(hit)
+        if sub:
+            self.subsite_recent_hits[sub].appendleft(hit)
+
         self.site_counts[site] += 1
         if sub:
             self.subsite_counts[sub] += 1
 
         self.source_counts[(site, sub, caller)] += 1
         self.surface_counts[(site, sub, surf)] += 1
-        self.format_counts[fmt] += 1
+        self.format_counts[(site, sub, fmt)] += 1
 
     def reset(self):
         self.recent_hits.clear()
+        self.site_recent_hits.clear()
+        self.subsite_recent_hits.clear()
         self.total_requests = 0
         self.source_counts.clear()
         self.surface_counts.clear()
@@ -153,7 +162,12 @@ def render_screen(hub: TrafficHub):
                 continue
             surf_map[f"[{surf}]"] += count
 
-    fmt_map = hub.format_counts
+    fmt_map = Counter()
+    for (s, sub, fmt), count in hub.format_counts.items():
+        if hub.site_filter == "ALL" or hub.site_filter == s:
+            if s == "avascry" and hub.avascry_sub_filter != "ALL" and hub.avascry_sub_filter != sub:
+                continue
+            fmt_map[fmt] += count
 
     top_src = src_map.most_common(7)
     top_surf = surf_map.most_common(7)
@@ -175,7 +189,7 @@ def render_screen(hub: TrafficHub):
     lines.append(f"  {BOLD}⚡ LIVE STREAM FEED — ACTIVE FILTER:{RESET} {YELLOW}{filter_label}{RESET}  {DIM}(Press [1] All | [2] AvaScry | [3] Specs | [4] Vet | [5] Minder | [6] Golf){RESET}")
     lines.append(f"{CYAN}----------------------------------------------------------------------------------------------------{RESET}")
 
-    # Render Live Stream Hits
+    # Render Live Stream Hits directly from the appropriate queue
     try:
         term_height = os.get_terminal_size().lines
         # Header + top stats take ~16 lines, reserve 2 lines at bottom
@@ -183,16 +197,18 @@ def render_screen(hub: TrafficHub):
     except Exception:
         max_feed_lines = 32
 
+    # Select dedicated queue based on active filter
+    if hub.site_filter == "ALL":
+        target_queue = hub.recent_hits
+    elif hub.site_filter == "avascry" and hub.avascry_sub_filter != "ALL":
+        target_queue = hub.subsite_recent_hits[hub.avascry_sub_filter]
+    else:
+        target_queue = hub.site_recent_hits[hub.site_filter]
+
     rendered = 0
-    for hit in hub.recent_hits:
+    for hit in target_queue:
         if rendered >= max_feed_lines:
             break
-
-        # Filter check
-        if hub.site_filter != "ALL" and hit["site"] != hub.site_filter:
-            continue
-        if hit["site"] == "avascry" and hub.avascry_sub_filter != "ALL" and hit["subsite"] != hub.avascry_sub_filter:
-            continue
 
         site_b = hit["site_badge"]
         caller_b = hit["caller_badge"]
