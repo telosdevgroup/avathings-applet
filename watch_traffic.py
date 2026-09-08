@@ -33,10 +33,10 @@ class TrafficHub:
     def __init__(self):
         self.site_filter = "ALL"        # "ALL", "avascry", "avaspecs", "vetgems", "avaminder", "vethagolf"
         self.avascry_sub_filter = "ALL" # "ALL", "MTG", "NEC", "DOM", "SWU"
-        # Keep generous queues in RAM - 100,000 hits per queue (~a few hundred MB total)
-        self.recent_hits = deque(maxlen=100000)
-        self.site_recent_hits = defaultdict(lambda: deque(maxlen=100000))
-        self.subsite_recent_hits = defaultdict(lambda: deque(maxlen=100000))
+        # Keep generous queues in RAM - 500,000 hits per queue (~1GB RAM headroom)
+        self.recent_hits = deque(maxlen=500000)
+        self.site_recent_hits = defaultdict(lambda: deque(maxlen=500000))
+        self.subsite_recent_hits = defaultdict(lambda: deque(maxlen=500000))
         self.total_requests = 0
 
         # Stats counters
@@ -87,10 +87,11 @@ def tail_parser_worker(parser, hub: TrafficHub):
 
     try:
         with open(path, "r", encoding="utf-8", errors="replace") as f:
-            # Seek near end, then read back rolling 50 lines to seed initial buffer
+            # Seed generously from the log file (up to 25MB or entire file if smaller)
             f.seek(0, os.SEEK_END)
             size = f.tell()
-            seek_pos = max(0, size - 35000)
+            seek_bytes = min(size, 25 * 1024 * 1024)
+            seek_pos = max(0, size - seek_bytes)
             f.seek(seek_pos)
             if seek_pos > 0:
                 f.readline() # drop partial line
