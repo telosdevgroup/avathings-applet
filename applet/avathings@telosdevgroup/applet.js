@@ -285,22 +285,6 @@ class AvathingsApplet extends Applet.TextApplet {
             });
             this.menu.addMenuItem(this.autoDaemonSwitch);
 
-            // Quick Presets
-            let presetMenu = new PopupMenu.PopupSubMenuMenuItem("⚡ Quick Capacity Presets");
-            let presets = [
-                { id: "p11", name: "P:11 · Eco & Battery Sweet Spot (~35%)" },
-                { id: "p23", name: "P:23 · Balanced Daily Working (~75%)" },
-                { id: "p31", name: "P:31 · Salt Flats Max Uncapped (100%)" }
-            ];
-            presets.forEach(p => {
-                let item = new PopupMenu.PopupMenuItem(p.name);
-                item.connect("activate", () => {
-                    this.executeCommand(`sudo changestate ${p.id}`);
-                });
-                presetMenu.menu.addMenuItem(item);
-            });
-            this.menu.addMenuItem(presetMenu);
-
             // Full Tier Submenu
             this.tierSubmenu = new PopupMenu.PopupSubMenuMenuItem("🎯 Select Capacity Tier");
             this.menu.addMenuItem(this.tierSubmenu);

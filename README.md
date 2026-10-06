@@ -60,7 +60,7 @@ The **Avathings** native Cinnamon applet integrates both `changestate` and `avab
 
 ### Features
 - **Real-Time Panel Monitoring:** Displays current tier (e.g. `P:23`), battery status, and active charge ceiling at a glance.
-- **Compute Governor Control:** Quick presets (`P:11` Eco, `P:23` Balanced, `P:31` Max Uncapped), full dynamic tier flyout menu, and toggle for the `changestate-auto` autonomous daemon.
+- **Compute Governor Control:** Dynamic tier selection flyout menu (`P:2` through `P:31`) and toggle for the `changestate-auto` autonomous daemon.
 - **Battery Threshold Management:** One-click toggles for Desk Mode (80%), Full Travel (100%), and custom thresholds.
 - **Non-blocking Telemetry:** Uses native asynchronous Gio subprocess calls.
 
