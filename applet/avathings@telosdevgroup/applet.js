@@ -263,7 +263,7 @@ class AvathingsApplet extends Applet.TextApplet {
         this.menu.removeAll();
 
         // --- SECTION: CHANGESTATE ---
-        let computeHeader = new PopupMenu.PopupMenuItem("🎚️  Compute & Thermals (changestate)", { reactive: false });
+        let computeHeader = new PopupMenu.PopupMenuItem("🎚️  Compute Capacity (changestate)", { reactive: false });
         computeHeader.actor.add_style_class_name("avathings-menu-header");
         this.menu.addMenuItem(computeHeader);
 
@@ -343,32 +343,45 @@ class AvathingsApplet extends Applet.TextApplet {
         // --- SECTION: LIVE TERMINALS & LOGS ---
         let terminalMenu = new PopupMenu.PopupSubMenuMenuItem("💻 Live Terminals & Logs");
 
+        // changestate tools
         if (this.hasChangestate) {
-            let changestateLogItem = new PopupMenu.PopupIconMenuItem("changestate-auto Live Logs", "utilities-terminal-symbolic", St.IconType.SYMBOLIC);
+            let changestateLogItem = new PopupMenu.PopupIconMenuItem("changestate: Live Daemon Logs", "utilities-terminal-symbolic", St.IconType.SYMBOLIC);
             changestateLogItem.connect("activate", () => {
                 this.spawnTerminal("changestate-auto Logs", "journalctl -u changestate-auto -f");
             });
             terminalMenu.menu.addMenuItem(changestateLogItem);
 
-            let changestateStatusItem = new PopupMenu.PopupIconMenuItem("changestate Full Diagnostic", "utilities-terminal-symbolic", St.IconType.SYMBOLIC);
+            let changestateStatusItem = new PopupMenu.PopupIconMenuItem("changestate: Full Diagnostics", "utilities-terminal-symbolic", St.IconType.SYMBOLIC);
             changestateStatusItem.connect("activate", () => {
                 this.spawnTerminal("changestate Diagnostic", "changestate status; echo ''; read -n 1 -s -r -p 'Press any key to close...'");
             });
             terminalMenu.menu.addMenuItem(changestateStatusItem);
         }
 
+        if (this.hasChangestate && this.hasAvabatt) {
+            terminalMenu.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+        }
+
+        // avabatt tools
         if (this.hasAvabatt) {
-            let avabattStatusItem = new PopupMenu.PopupIconMenuItem("avabatt Battery Diagnostic", "utilities-terminal-symbolic", St.IconType.SYMBOLIC);
+            let avabattStatusItem = new PopupMenu.PopupIconMenuItem("avabatt: Battery Diagnostics", "utilities-terminal-symbolic", St.IconType.SYMBOLIC);
             avabattStatusItem.connect("activate", () => {
                 this.spawnTerminal("avabatt Diagnostic", "avabatt status; echo ''; read -n 1 -s -r -p 'Press any key to close...'");
             });
             terminalMenu.menu.addMenuItem(avabattStatusItem);
+
+            let avabattLogItem = new PopupMenu.PopupIconMenuItem("avabatt: Service Logs", "utilities-terminal-symbolic", St.IconType.SYMBOLIC);
+            avabattLogItem.connect("activate", () => {
+                this.spawnTerminal("avabatt Logs", "journalctl -u avabatt -n 50 -f");
+            });
+            terminalMenu.menu.addMenuItem(avabattLogItem);
         }
 
         // Dashboard option if dashboard.sh exists
         let dashPath = GLib.build_filenamev([this.appletPath, "dashboard.sh"]);
         if (GLib.file_test(dashPath, GLib.FileTest.IS_EXECUTABLE)) {
-            let liveDashItem = new PopupMenu.PopupIconMenuItem("Avathings Live TUI Dashboard", "utilities-terminal-symbolic", St.IconType.SYMBOLIC);
+            terminalMenu.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+            let liveDashItem = new PopupMenu.PopupIconMenuItem("Avathings: Live TUI Dashboard", "utilities-terminal-symbolic", St.IconType.SYMBOLIC);
             liveDashItem.connect("activate", () => {
                 this.spawnTerminal("Avathings Live Dashboard", dashPath);
             });

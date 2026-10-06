@@ -4,7 +4,7 @@ Central command catalog and cheat sheet for local hardware preservation and syst
 
 ### Tool Suite
 This is the complete set of tools:
-- **`changestate`**: [GitHub Repository](https://github.com/telosdevgroup/changestate) · Prime-based resource and thermal manager
+- **`changestate`**: [GitHub Repository](https://github.com/telosdevgroup/changestate) · Prime-based CPU/GPU compute capacity governor (helps keep machines running cooler; BIOS manages thermals)
 - **`avabatt`**: [GitHub Repository](https://github.com/telosdevgroup/avabatt) · Native Linux hardware battery charge threshold manager
 - **`avathings` Applet**: Native Cinnamon taskbar applet quietly reporting on and controlling `changestate` and `avabatt`
 - *...more to come!*
@@ -33,8 +33,8 @@ Manage native battery charge thresholds via Linux kernel sysfs interfaces withou
 
 ---
 
-### 🎚️ `changestate` (Compute & Thermal Governor)
-Scale CPU cores, frequencies, boost states, and GPU limits dynamically using prime-indexed capacity tiers.
+### 🎚️ `changestate` (Compute Capacity Governor)
+Scale CPU cores, frequencies, boost states, and GPU limits dynamically using prime-indexed capacity tiers (helps keep machines running cool while leaving thermal management to the BIOS).
 
 | Command | Description |
 | :--- | :--- |

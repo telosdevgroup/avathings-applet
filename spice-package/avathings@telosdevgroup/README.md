@@ -1,7 +1,7 @@
 # Avathings Cinnamon Applet
 
 Unified panel monitor and control center for:
-- [changestate](https://github.com/telosdevgroup/changestate): Prime-indexed CPU/GPU compute and thermal governor.
+- [changestate](https://github.com/telosdevgroup/changestate): Prime-indexed CPU/GPU compute capacity governor.
 - [avabatt](https://github.com/telosdevgroup/avabatt): Native Linux kernel battery charge threshold manager.
 
 ## Prerequisites
