@@ -392,12 +392,9 @@ class AvathingsApplet extends Applet.TextApplet {
         this.availableTiers.forEach(tier => {
             let label = tier.label || `${tier.id.toUpperCase()} · ~${tier.pct}%`;
             if (tier.id === "p11" || tier.prime === 11) {
-                label = "P:11 · ~35% (Conservative Sweet Spot · Wakeup State)";
+                label = `P:11 · ~${tier.pct || 35}% (Wakeup)`;
             }
             let item = new PopupMenu.PopupMenuItem(label);
-            if (tier.id === "p11" || tier.prime === 11) {
-                item.actor.add_style_class_name("avathings-highlight-tier");
-            }
             item.connect("activate", () => {
                 this.executeCommand(`sudo changestate ${tier.id}`);
             });
