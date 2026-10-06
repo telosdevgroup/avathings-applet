@@ -1,8 +1,8 @@
 # 🛠️ avathings
 
 Central command catalog and cheat sheet for local hardware preservation and system control utilities:
-- [avabatt](file:///home/dev/Code/tdg/avabatt/README.md): Native Linux hardware battery charge threshold manager
-- [changestate](file:///home/dev/Code/tdg/compstate/README.md): Prime-based resource and thermal manager
+- **avabatt**: [GitHub Repository](https://github.com/telosdevgroup/avabatt) · Native Linux hardware battery charge threshold manager
+- **changestate**: [GitHub Repository](https://github.com/telosdevgroup/changestate) · Prime-based resource and thermal manager
 
 ---
 
@@ -51,11 +51,15 @@ Monitors activity and automatically scales capacity between `P:7` and `P:23` bas
 
 ## 📂 Repositories & Paths
 
-- **`avabatt/`**: [../avabatt](file:///home/dev/Code/tdg/avabatt)
+- **`avabatt`**:
+  - GitHub: https://github.com/telosdevgroup/avabatt
+  - Local Clone: `../avabatt`
   - Binary: `/usr/local/bin/avabatt`
   - Service: `/etc/systemd/system/avabatt.service`
   - Config: `/etc/avabatt.conf`
-- **`changestate/` (compstate)**: [../compstate](file:///home/dev/Code/tdg/compstate)
+- **`changestate` (compstate)**:
+  - GitHub: https://github.com/telosdevgroup/changestate
+  - Local Clone: `../compstate`
   - Binary: `/usr/local/bin/changestate`
   - Daemon Binary: `/usr/local/bin/changestate-auto`
   - Service: `/etc/systemd/system/changestate-auto.service`
