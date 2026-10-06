@@ -1,8 +1,13 @@
 # 🛠️ avathings
 
-Central command catalog and cheat sheet for local hardware preservation and system control utilities:
-- **avabatt**: [GitHub Repository](https://github.com/telosdevgroup/avabatt) · Native Linux hardware battery charge threshold manager
-- **changestate**: [GitHub Repository](https://github.com/telosdevgroup/changestate) · Prime-based resource and thermal manager
+Central command catalog and cheat sheet for local hardware preservation and system control utilities.
+
+### Tool Suite
+This is the complete set of tools:
+- **`changestate`**: [GitHub Repository](https://github.com/telosdevgroup/changestate) · Prime-based resource and thermal manager
+- **`avabatt`**: [GitHub Repository](https://github.com/telosdevgroup/avabatt) · Native Linux hardware battery charge threshold manager
+- **`avathings` Applet**: Native Cinnamon taskbar applet quietly reporting on and controlling `changestate` and `avabatt`
+- *...more to come!*
 
 ---
 
@@ -49,6 +54,32 @@ Monitors activity and automatically scales capacity between `P:7` and `P:23` bas
 
 ---
 
+## 🖥️ Cinnamon Panel Applet (`avathings@telosdevgroup`)
+
+The **Avathings** native Cinnamon applet integrates both `changestate` and `avabatt` directly into your Linux Mint panel.
+
+### Features
+- **Real-Time Panel Monitoring:** Displays current tier (e.g. `P:23`), battery status, and active charge ceiling at a glance.
+- **Compute Governor Control:** Quick presets (`P:11` Eco, `P:23` Balanced, `P:31` Max Uncapped), full dynamic tier flyout menu, and toggle for the `changestate-auto` autonomous daemon.
+- **Battery Threshold Management:** One-click toggles for Desk Mode (80%), Full Travel (100%), and custom thresholds.
+- **Non-blocking Telemetry:** Uses native asynchronous Gio subprocess calls.
+
+### Installation & Setup
+
+1. **Install and Enable the Applet:**
+   ```bash
+   ./scripts/install-applet.sh
+   ./scripts/enable-applet.sh
+   ```
+
+2. **(Optional) Configure Passwordless Sudo:**
+   To switch tiers and battery thresholds without a Polkit / sudo password prompt each time:
+   ```bash
+   sudo ./scripts/setup-sudoers.sh
+   ```
+
+---
+
 ## 📂 Repositories & Paths
 
 - **`avabatt`**:
@@ -63,3 +94,7 @@ Monitors activity and automatically scales capacity between `P:7` and `P:23` bas
   - Binary: `/usr/local/bin/changestate`
   - Daemon Binary: `/usr/local/bin/changestate-auto`
   - Service: `/etc/systemd/system/changestate-auto.service`
+- **`avathings` Applet**:
+  - Source: `applet/avathings@telosdevgroup`
+  - Panel UUID: `avathings@telosdevgroup`
+
